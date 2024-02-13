@@ -1,7 +1,7 @@
 <?php
 
 /*
- * $Date: 2015/07/10 10:04:01 $
+ * $Date: 2021/07/30 08:25:27 $
  * Written by Kjeld Borch Egevang
  * E-mail: kjeld@mail4us.dk
  */
@@ -18,7 +18,7 @@ class Toolbox extends Module
       $this->tab = 'administration';
     else
       $this->tab = 'Tools';
-    $this->version = '0.9';
+    $this->version = '0.10';
     $this->author = 'Kjeld Borch Egevang';
 
     parent::__construct();
@@ -142,6 +142,10 @@ class Toolbox extends Module
 
   public function deleteImgDir($dirName, &$count)
   {
+    if (microtime(true) - $this->start_time > $this->max_time) {
+      $this->time_exceeded = true;
+      return;
+    }
     $res = opendir($dirName);
     if (!$res)
       die("Can't open image directory");
@@ -360,7 +364,11 @@ class Toolbox extends Module
     if (isset($_POST['deleteImages'])) {
       if ($this->getImageFiles($deleteInactive)) {
 	$count = 0;
+        $this->max_time = 30;
+        $this->start_time = microtime(true);
 	$this->deleteImgDir(_PS_PROD_IMG_DIR_, $count);
+        if (isset($this->time_exceeded))
+            $this->logTxt .= 'max. time exceeded<br />';
 	if ($count == 1)
 	  $txt = $this->l('image file deleted.');
 	else
